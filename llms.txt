@@ -1,0 +1,252 @@
+# @packages/prisma-client - Документация для ИИ
+
+## Краткое описание
+
+Prisma Client wrapper для NestJS с паттерном Singleton и удобной интеграцией для работы с PostgreSQL базой данных. Предоставляет глобальный NestJS модуль для простой интеграции с поддержкой generic типов для кастомных Prisma Client экземпляров.
+
+## Архитектура
+
+Пакет предоставляет единое подключение к Prisma Client через Singleton паттерн:
+- Глобальный модуль `PrismaModule` для интеграции в NestJS
+- Сервис `PrismaService` с generic типами для работы с Prisma Client
+- Использование фабрики для создания клиента (`clientFactory`)
+
+## Структура пакета
+
+```
+src/
+├── main/                                   # Основная логика
+│   ├── prisma.module.ts                    # PrismaModule - глобальный NestJS модуль
+│   └── prisma.service.ts                   # PrismaService - Singleton сервис с generic типами
+│
+├── types/                                  # TypeScript типы и интерфейсы
+│   ├── module-options.interface.ts         # Опции конфигурации модуля
+│   └── prisma-client.interface.ts          # Интерфейс PrismaClientLike
+│
+├── utils/                                  # Утилиты
+│   └── injection-keys.ts                   # DI токены
+│
+├── errors/                                 # Кастомные ошибки
+│   └── prisma.error.ts                     # PrismaClientError
+│
+└── index.ts                                # Точка входа - экспорты всех публичных API
+```
+
+## Основные компоненты
+
+### PrismaModule
+
+Глобальный NestJS модуль для единого подключения к Prisma Client.
+
+Метод инициализации:
+- `forRootAsync(options)` - асинхронная инициализация через useFactory
+
+Параметры:
+- `useFactory: (deps) => PrismaClientModuleOptions` - фабрика для создания опций модуля
+- `inject?: InjectionToken[]` - зависимости для инжекции в useFactory
+- `imports?: Module[]` - дополнительные модули для DI
+
+Опции (возвращаемые useFactory):
+- `clientFactory: () => TClient` - фабрика для создания экземпляра Prisma Client
+
+Экспортирует: `PrismaService`
+
+### PrismaService
+
+Сервис для работы с Prisma Client. Использует Singleton паттерн для единого подключения. Поддерживает generic типы для работы с кастомными Prisma Client экземплярами.
+
+Методы:
+- `get client(): TClient` - получить экземпляр Prisma Client (геттер)
+- `disconnect(): Promise<void>` - отключиться от базы данных (автоматически при shutdown)
+- `onModuleInit(): Promise<void>` - инициализация при старте модуля (вызывается автоматически NestJS)
+- `onModuleDestroy(): Promise<void>` - очистка при остановке модуля (вызывается автоматически NestJS)
+
+**Важно:** Lifecycle hooks вызываются автоматически NestJS, не нужно вызывать вручную.
+
+### PrismaClientError
+
+Кастомная ошибка Prisma Client:
+- Сохраняет stack trace оригинальной ошибки
+- Предоставляет доступ к оригинальной ошибке через `getOriginalError()`
+
+## Типы
+
+### PrismaClientModuleOptions
+
+```typescript
+interface PrismaClientModuleOptions<TClient extends PrismaClientLike = PrismaClientLike> {
+  clientFactory: () => TClient;
+}
+```
+
+### PrismaClientModuleAsyncOptions
+
+```typescript
+interface PrismaClientModuleAsyncOptions<
+  T extends unknown[] = [],
+  TClient extends PrismaClientLike = PrismaClientLike,
+> {
+  useFactory: (...args: T) => Promise<PrismaClientModuleOptions<TClient>> | PrismaClientModuleOptions<TClient>;
+  inject?: (InjectionToken | OptionalFactoryDependency)[];
+  imports?: Module[];
+}
+```
+
+### PrismaClientLike
+
+```typescript
+interface PrismaClientLike {
+  $disconnect: () => Promise<void>;
+}
+```
+
+## Переменные окружения
+
+- `DATABASE_URL` - URL подключения к PostgreSQL
+
+## Экспорты (index.ts)
+
+- Модули: `PrismaModule` (default export)
+- Сервисы: `PrismaService` (default export)
+- Типы: `PrismaClientModuleOptions`, `PrismaClientModuleAsyncOptions`
+- Ошибки: `PrismaClientError` (default export)
+
+## Типичные сценарии использования
+
+### Базовое использование
+
+1. Создать Prisma Client согласно документации Prisma
+2. Создать конфигурацию с `clientFactory`
+3. Импортировать `PrismaModule.forRootAsync()` в AppModule
+4. Инжектить `PrismaService` в сервисы для работы с Prisma Client
+
+### Использование с кастомным Prisma Client
+
+1. Создать кастомный класс, расширяющий Prisma Client
+2. Использовать кастомный класс в `clientFactory`
+3. Указать generic тип при инжекции: `PrismaService<CustomPrismaClient>`
+
+### Работа с транзакциями
+
+Использовать стандартные методы Prisma для транзакций через `prismaService.client.$transaction()`.
+
+## Важные замечания
+
+1. **Singleton Pattern** - PrismaService использует единый экземпляр для всего приложения
+2. **Graceful Shutdown** - `onModuleDestroy()` автоматически вызывает `disconnect()`
+3. **Generic типы** - Сервис поддерживает generic типы для работы с кастомными Prisma Client экземплярами
+4. **clientFactory** - Используется фабрика для создания клиента, что позволяет использовать кастомные экземпляры
+5. **Lifecycle hooks** - `onModuleInit()` и `onModuleDestroy()` вызываются автоматически NestJS
+6. **PrismaClientError** - все ошибки оборачиваются в PrismaClientError с сохранением оригинальной ошибки
+7. **Обязательная инициализация** - `client` геттер выбрасывает ошибку, если клиент не инициализирован
+
+## Частые проблемы и решения
+
+1. **Ошибка "Prisma Client не инициализирован"**
+   - Проверьте, что `PrismaModule` импортирован в `AppModule`
+   - Убедитесь, что `clientFactory` возвращает валидный Prisma Client
+
+2. **Ошибка подключения к БД**
+   - Проверьте переменные окружения (`DATABASE_URL`)
+   - Убедитесь, что PostgreSQL запущен
+
+3. **Проблемы с generic типами**
+   - Убедитесь, что передаете правильный тип в `PrismaService<YourPrismaClient>`
+   - Проверьте, что ваш Prisma Client реализует интерфейс `PrismaClientLike`
+
+## Для кодогенерации
+
+При генерации кода, использующего этот пакет:
+1. **ВСЕГДА используйте clientFactory** для создания Prisma Client
+2. **Используйте типы из пакета**: `import { PrismaModule, PrismaService, PrismaClientModuleOptions } from '@packages/prisma-client'`
+3. **В NestJS используйте forRootAsync** для инициализации модуля
+4. **Используйте геттер client** для доступа к Prisma Client: `prismaService.client.user.findMany()`
+5. **Используйте generic типы** для кастомных Prisma Client: `PrismaService<CustomPrismaClient>`
+6. **Убедитесь, что Prisma Client реализует PrismaClientLike** (имеет метод `$disconnect`)
+
+## Примеры полной настройки
+
+**Файл .env:**
+```env
+DATABASE_URL="postgresql://user:password@localhost:5432/database?schema=public"
+```
+
+**Файл src/prisma/client.ts:**
+```typescript
+import { PrismaClient as GeneratedPrismaClient } from '@prisma/client';
+
+export const prismaClient = new GeneratedPrismaClient({
+  datasources: { db: { url: process.env.DATABASE_URL } },
+});
+```
+
+**Файл src/configs/database.config.ts:**
+```typescript
+import { registerAs } from '@nestjs/config';
+import type { PrismaClientModuleOptions } from '@packages/prisma-client';
+import { prismaClient } from '../prisma/client';
+
+export default registerAs('database', (): PrismaClientModuleOptions => ({
+  clientFactory: () => prismaClient,
+}));
+```
+
+**Файл app.module.ts:**
+```typescript
+import { Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { PrismaModule } from '@packages/prisma-client';
+import databaseConfig from './configs/database.config';
+
+@Module({
+  imports: [
+    ConfigModule.forRoot({ load: [databaseConfig], isGlobal: true }),
+    PrismaModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => configService.get('database')!,
+      inject: [ConfigService],
+    }),
+  ],
+})
+export class AppModule {}
+```
+
+**Файл src/users/users.service.ts:**
+```typescript
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '@packages/prisma-client';
+import { PrismaClient } from '@prisma/client';
+
+@Injectable()
+export class UsersService {
+  constructor(private readonly prisma: PrismaService<PrismaClient>) {}
+
+  async findAll() {
+    return await this.prisma.client.user.findMany();
+  }
+
+  async findById(id: string) {
+    return await this.prisma.client.user.findUnique({ where: { id } });
+  }
+}
+```
+
+## Зависимости
+
+- `@nestjs/common` - NestJS core
+- `@prisma/client` - Prisma Client runtime
+- `reflect-metadata` - TypeScript decorators
+
+## Тестирование
+
+Пакет имеет 100% покрытие тестами. Все компоненты протестированы через Jest.
+
+## Особенности реализации
+
+1. **Singleton Pattern** - единый экземпляр Prisma Client для всего приложения
+2. **Generic типы** - поддержка кастомных Prisma Client экземпляров через generic типы
+3. **clientFactory** - использование фабрики для создания клиента
+4. **Graceful shutdown** - метод `disconnect()` корректно закрывает соединения
+5. **Lifecycle hooks** - автоматический вызов `onModuleInit()` и `onModuleDestroy()` через NestJS
+6. **Типизация** - полная типизация через generic типы и интерфейсы
+7. **Обработка ошибок** - кастомная ошибка `PrismaClientError` с сохранением оригинальной ошибки
