@@ -16,8 +16,17 @@ describe("PrismaModule", () => {
 
 	beforeEach(() => {
 		mockClient = {
+			$connect: jest.fn().mockResolvedValue(undefined),
 			$disconnect: jest.fn().mockResolvedValue(undefined),
-		};
+			$transaction: jest.fn() as MockPrismaClient["$transaction"],
+			$on: jest.fn(),
+			$use: jest.fn().mockResolvedValue(undefined),
+			$queryRaw: jest.fn().mockResolvedValue([]) as MockPrismaClient["$queryRaw"],
+			$executeRaw: jest.fn().mockResolvedValue(0),
+			$queryRawUnsafe: jest.fn().mockResolvedValue([]) as MockPrismaClient["$queryRawUnsafe"],
+			$executeRawUnsafe: jest.fn().mockResolvedValue(0),
+			$extends: jest.fn().mockReturnThis() as MockPrismaClient["$extends"],
+		} as MockPrismaClient;
 
 		mockOptions = {
 			clientFactory: jest.fn().mockReturnValue(mockClient),
@@ -195,6 +204,32 @@ describe("PrismaModule", () => {
 });
 
 // Мок для PrismaClientLike
-interface MockPrismaClient extends PrismaClientLike {
+type MockPrismaClient = Omit<
+	PrismaClientLike,
+	| "$extends"
+	| "$connect"
+	| "$disconnect"
+	| "$transaction"
+	| "$on"
+	| "$use"
+	| "$queryRaw"
+	| "$executeRaw"
+	| "$queryRawUnsafe"
+	| "$executeRawUnsafe"
+> & {
+	$connect: jest.Mock<Promise<void>>;
 	$disconnect: jest.Mock<Promise<void>>;
-}
+	$transaction: jest.Mock & PrismaClientLike["$transaction"];
+	$on: jest.Mock<void, [string | string[], (e: unknown) => void]>;
+	$use: jest.Mock<
+		Promise<unknown>,
+		[PrismaClientLike["$use"] extends (params: infer P) => Promise<unknown> ? P : never]
+	>;
+	$queryRaw: <T = unknown>(query: TemplateStringsArray, ...values: unknown[]) => Promise<T>;
+	$executeRaw: (query: TemplateStringsArray, ...values: unknown[]) => Promise<number>;
+	$queryRawUnsafe: <T = unknown>(query: string, ...values: unknown[]) => Promise<T>;
+	$executeRawUnsafe: (query: string, ...values: unknown[]) => Promise<number>;
+	$extends: <T extends Record<string, unknown>>(
+		extension: (client: MockPrismaClient) => T
+	) => MockPrismaClient & T;
+};

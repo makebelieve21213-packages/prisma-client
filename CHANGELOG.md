@@ -5,6 +5,21 @@
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.0.0/),
 и этот проект придерживается [Semantic Versioning](https://semver.org/lang/ru/).
 
+## [1.0.1] - 2025-12-04
+
+### Добавлено
+- Расширен интерфейс `PrismaClientLike` основными методами Prisma Client:
+  - `$connect` - подключение к базе данных
+  - `$transaction` - поддержка транзакций (массив промисов и функция-колбэк)
+  - `$on` - подписка на события Prisma
+  - `$use` - middleware для Prisma Client
+  - `$queryRaw` и `$executeRaw` - безопасные сырые SQL запросы
+  - `$queryRawUnsafe` и `$executeRawUnsafe` - небезопасные сырые SQL запросы
+  - `$extends` - расширение клиента кастомными методами
+
+### Изменено
+- Интерфейс `PrismaClientLike` теперь включает все основные методы Prisma Client для полной совместимости
+
 ## [1.0.0] - 2025-12-01
 
 ### Добавлено

@@ -1,6 +1,6 @@
 {
   "name": "@makebelieve21213-packages/prisma-client",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Prisma Client wrapper for database",
   "type": "module",
   "main": "./dist/index.js",
