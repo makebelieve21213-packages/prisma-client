@@ -225,11 +225,17 @@ type MockPrismaClient = Omit<
 		Promise<unknown>,
 		[PrismaClientLike["$use"] extends (params: infer P) => Promise<unknown> ? P : never]
 	>;
-	$queryRaw: <T = unknown>(query: TemplateStringsArray, ...values: unknown[]) => Promise<T>;
-	$executeRaw: (query: TemplateStringsArray, ...values: unknown[]) => Promise<number>;
+	$queryRaw: <T = unknown>(
+		query: TemplateStringsArray | Record<string, unknown>,
+		...values: unknown[]
+	) => Promise<T>;
+	$executeRaw: (
+		query: TemplateStringsArray | Record<string, unknown>,
+		...values: unknown[]
+	) => Promise<number>;
 	$queryRawUnsafe: <T = unknown>(query: string, ...values: unknown[]) => Promise<T>;
 	$executeRawUnsafe: (query: string, ...values: unknown[]) => Promise<number>;
 	$extends: <T extends Record<string, unknown>>(
-		extension: (client: MockPrismaClient) => T
+		extension: ((client: MockPrismaClient) => T) | Record<string, unknown>
 	) => MockPrismaClient & T;
 };

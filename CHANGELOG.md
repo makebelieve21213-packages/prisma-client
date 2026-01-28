@@ -5,6 +5,16 @@
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.0.0/),
 и этот проект придерживается [Semantic Versioning](https://semver.org/lang/ru/).
 
+## [1.0.2] - 2026-01-28
+
+### Исправлено
+- Исправлена совместимость интерфейса `PrismaClientLike` с типом `PrismaClient` из `@prisma/client`
+- Обновлены сигнатуры методов `$queryRaw` и `$executeRaw` для поддержки типа `Sql` (теперь принимают `TemplateStringsArray | Record<string, unknown>`)
+- Обновлена сигнатура метода `$extends` для поддержки `ExtensionArgs` (теперь принимает функцию или объект)
+- Обновлен параметр `isolationLevel` в `$transaction` для поддержки более широких типов
+- Обновлены моки в тестах для соответствия новым сигнатурам интерфейса
+- Добавлен экспорт интерфейса PrismaClientLike
+
 ## [1.0.1] - 2025-12-04
 
 ### Добавлено

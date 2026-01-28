@@ -5,3 +5,4 @@ export type {
 	PrismaClientModuleOptions,
 	PrismaClientModuleAsyncOptions,
 } from "src/types/module-options.interface";
+export type { PrismaClientLike } from "src/types/prisma-client.interface";
