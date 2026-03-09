@@ -60,9 +60,7 @@ const config: JestConfigWithTsJest = {
 		},
 	},
 	// Трансформация ESM модулей из @makebelieve21213-packages
-	transformIgnorePatterns: [
-		"node_modules/(?!(@makebelieve21213-packages)/)",
-	],
+	transformIgnorePatterns: ["node_modules/(?!(@makebelieve21213-packages)/)"],
 };
 
 export default config;
